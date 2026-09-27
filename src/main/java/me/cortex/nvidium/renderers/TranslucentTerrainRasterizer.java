@@ -5,7 +5,7 @@ import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlSampler;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import me.cortex.nvidium.util.RenderPearlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.renderpearl.frontend.FrontendRenderPass;
 import com.mojang.renderpearl.util.TextureViewAndSampler;
@@ -26,6 +26,8 @@ import static org.lwjgl.opengl.NVMeshShader.glMultiDrawMeshTasksIndirectNV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.glBufferAddressRangeNV;
 
 public class TranslucentTerrainRasterizer extends Phase {
+    private static final int OIT_COEFFICIENT_COUNT = 8;
+
     private final Shader shader = Shader.make()
             .addSource(TASK, ShaderLoader.parse(Identifier.fromNamespaceAndPath("nvidium", "terrain/translucent/task.glsl")))
             .addSource(MESH, ShaderLoader.parse(Identifier.fromNamespaceAndPath("nvidium", "terrain/translucent/mesh.glsl")))
@@ -46,7 +48,7 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("ALPHA_CUTOUT", 0.01f)
                                     .define("OIT")
                                     .define("OIT_WAVELET_RANK", 2)
-                                    .define("OIT_COEFF_COUNT", LevelRenderer.OIT_COEFFICIENT_COUNT)
+                                    .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ALPHA_ONLY")
                                     .define("OIT_DEPTH_BOUNDS")
@@ -61,7 +63,7 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("ALPHA_CUTOUT", 0.01f)
                                     .define("OIT")
                                     .define("OIT_WAVELET_RANK", 2)
-                                    .define("OIT_COEFF_COUNT", LevelRenderer.OIT_COEFFICIENT_COUNT)
+                                    .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ALPHA_ONLY")
                                     .define("OIT_TRANSMITTANCE")
@@ -76,7 +78,7 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("ALPHA_CUTOUT", 0.01f)
                                     .define("OIT")
                                     .define("OIT_WAVELET_RANK", 2)
-                                    .define("OIT_COEFF_COUNT", LevelRenderer.OIT_COEFFICIENT_COUNT)
+                                    .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ACCUMULATE")
                     ))
@@ -88,10 +90,11 @@ public class TranslucentTerrainRasterizer extends Phase {
 
     private static void setTexture(GpuTextureView texView, int bindingPoint, GpuSampler sampler) {
         GlTexture tex = (GlTexture) texView.texture();
-        GlStateManager._activeTexture(GL32C.GL_TEXTURE0 + bindingPoint);
-        GlStateManager._bindTexture(tex.glId());
-        GlStateManager._texParameter(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_BASE_LEVEL, texView.baseMipLevel());
-        GlStateManager._texParameter(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_MAX_LEVEL, texView.baseMipLevel() + texView.mipLevels() - 1);
+        var sm = RenderPearlStateManager.get();
+        sm._activeTexture(GL32C.GL_TEXTURE0 + bindingPoint);
+        sm._bindTexture(tex.glId());
+        GL11C.glTexParameteri(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_BASE_LEVEL, texView.baseMipLevel());
+        GL11C.glTexParameteri(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_MAX_LEVEL, texView.baseMipLevel() + texView.mipLevels() - 1);
         GL33C.glBindSampler(bindingPoint, ((GlSampler) sampler).getId());
     }
 
@@ -111,35 +114,36 @@ public class TranslucentTerrainRasterizer extends Phase {
 
         setTexture(blockTexture, 0, terrainSampler);
 
+        var sm = RenderPearlStateManager.get();
         if (stage == null) { // Traditional translucency
             shader.bind();
-            GlStateManager._enableBlend(0);
-            GlStateManager._blendFuncSeparate(GL33C.GL_SRC_ALPHA, GL33C.GL_ONE_MINUS_SRC_ALPHA, GL33C.GL_ONE, GL33C.GL_ONE_MINUS_SRC_ALPHA);
+            sm._enableBlend(0);
+            sm._blendFuncSeparate(GL33C.GL_SRC_ALPHA, GL33C.GL_ONE_MINUS_SRC_ALPHA, GL33C.GL_ONE, GL33C.GL_ONE_MINUS_SRC_ALPHA);
             setTexture(lightTexture, 1, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
         } else { // Oit stuffs, we need to fetch all the uniforms from traditional FrontendRenderPass and bind them, because renderpearl only bind at draw time
             Shader oitShader = oitShaders[stage.ordinal()];
             oitShader.bind();
-            GlStateManager._depthMask(false);
+            sm._depthMask(false);
 
             switch (stage) {
                 case OitStage.DEPTH_BOUNDS:
-                    GlStateManager._enableBlend(0);
-                    GlStateManager._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
-                    GlStateManager._blendEquationSeparate(GL14C.GL_MAX, GL14C.GL_MAX);
+                    sm._enableBlend(0);
+                    sm._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
+                    sm._blendEquationSeparate(GL14C.GL_MAX, GL14C.GL_MAX);
                     break;
                 case OitStage.TRANSMITTANCE:
-                    GlStateManager._enableBlend(0);
-                    GlStateManager._enableBlend(1);
-                    GlStateManager._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
-                    GlStateManager._blendEquationSeparate(GL33C.GL_FUNC_ADD, GL33C.GL_FUNC_ADD);
+                    sm._enableBlend(0);
+                    sm._enableBlend(1);
+                    sm._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
+                    sm._blendEquationSeparate(GL33C.GL_FUNC_ADD, GL33C.GL_FUNC_ADD);
 
                     linkRenderpearlSampler(renderPass, oitShader.getId(), "DepthBoundsSampler", 2);
                     break;
 
                 case OitStage.ACCUMULATE:
-                    GlStateManager._enableBlend(0);
-                    GlStateManager._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
-                    GlStateManager._blendEquationSeparate(GL33C.GL_FUNC_ADD, GL33C.GL_FUNC_ADD);
+                    sm._enableBlend(0);
+                    sm._blendFuncSeparate(GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE, GL33C.GL_ONE);
+                    sm._blendEquationSeparate(GL33C.GL_FUNC_ADD, GL33C.GL_FUNC_ADD);
 
                     setTexture(lightTexture, 1, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 

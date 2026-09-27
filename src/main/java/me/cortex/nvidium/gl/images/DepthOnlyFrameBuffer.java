@@ -1,7 +1,8 @@
 package me.cortex.nvidium.gl.images;
 
 import com.mojang.renderpearl.backend.opengl.GlConst;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import me.cortex.nvidium.util.RenderPearlStateManager;
+import org.lwjgl.opengl.GL11C;
 
 import static org.lwjgl.opengl.ARBDirectStateAccess.*;
 import static org.lwjgl.opengl.GL11C.GL_TEXTURE_2D;
@@ -30,9 +31,9 @@ public class DepthOnlyFrameBuffer {
     }
 
     public void bind(boolean setViewport) {
-        GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fid);
+        RenderPearlStateManager.get()._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, fid);
         if (setViewport) {
-            GlStateManager._viewport(0, 0, width, height);
+            GL11C.glViewport(0, 0, width, height);
         }
     }
 

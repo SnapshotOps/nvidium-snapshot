@@ -2,3 +2,7 @@ accessWidener v1 official
 
 accessible class com/mojang/renderpearl/backend/opengl/GlDevice
 accessible class com/mojang/renderpearl/backend/opengl/GlCommandEncoder
+accessible class com/mojang/renderpearl/backend/opengl/GlSampler
+accessible class com/mojang/renderpearl/backend/opengl/GlTexture
+accessible class com/mojang/renderpearl/frontend/FrontendGpuDevice
+accessible field com/mojang/renderpearl/frontend/FrontendGpuDevice backend Lcom/mojang/renderpearl/backend/api/GpuDeviceBackend;

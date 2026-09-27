@@ -5,7 +5,7 @@ import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.renderpearl.backend.opengl.GlSampler;
-import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import me.cortex.nvidium.util.RenderPearlStateManager;
 import com.mojang.renderpearl.backend.opengl.GlTexture;
 import me.cortex.nvidium.gl.shader.Shader;
 import me.cortex.nvidium.sodiumCompat.ShaderLoader;
@@ -33,10 +33,11 @@ public class TemporalTerrainRasterizer extends Phase {
 
     private static void setTexture(GpuTextureView texView, int bindingPoint, GpuSampler sampler) {
         GlTexture tex = (GlTexture) texView.texture();
-        GlStateManager._activeTexture(GL32C.GL_TEXTURE0 + bindingPoint);
-        GlStateManager._bindTexture(tex.glId());
-        GlStateManager._texParameter(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_BASE_LEVEL, texView.baseMipLevel());
-        GlStateManager._texParameter(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_MAX_LEVEL, texView.baseMipLevel() + texView.mipLevels() - 1);
+        var sm = RenderPearlStateManager.get();
+        sm._activeTexture(GL32C.GL_TEXTURE0 + bindingPoint);
+        sm._bindTexture(tex.glId());
+        GL11C.glTexParameteri(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_BASE_LEVEL, texView.baseMipLevel());
+        GL11C.glTexParameteri(GL32C.GL_TEXTURE_2D, GL32C.GL_TEXTURE_MAX_LEVEL, texView.baseMipLevel() + texView.mipLevels() - 1);
         GL33C.glBindSampler(bindingPoint, ((GlSampler) sampler).getId());
     }
 

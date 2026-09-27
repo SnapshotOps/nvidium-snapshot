@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.textures.GpuSampler;
 import com.mojang.renderpearl.backend.opengl.GlStateManager;
+import me.cortex.nvidium.util.RenderPearlStateManager;
 import com.mojang.renderpearl.frontend.FrontendRenderPass;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
@@ -62,15 +63,16 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
                             .nvidium$getBackend())
                     .nvidium$setLastProgram(null);
 
-            GlStateManager._disableScissorTest();
-            GlStateManager._enableCull();
-            GlStateManager._enableDepthTest();
-            GlStateManager._depthFunc(GL33C.GL_GEQUAL); // reverse-Z
-            GlStateManager._colorMask(0, 15);
-            GlStateManager._depthMask(true);
+            var sm = RenderPearlStateManager.get();
+            sm._disableScissorTest();
+            sm._enableCull();
+            sm._enableDepthTest();
+            sm._depthFunc(GL33C.GL_GEQUAL); // reverse-Z
+            sm._colorMask(0, 15);
+            sm._depthMask(true);
 
             if (pass == DefaultTerrainRenderPasses.SOLID) {
-                GlStateManager._disableBlend(0);
+                sm._disableBlend(0);
                 this.getRenderer().renderFrame(pass, viewport, fogParameters, matrices, x, y, z, terrainSampler);
             } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
                 this.getRenderer().renderTranslucent(pass, (FrontendRenderPass) renderPass, terrainSampler, stage);

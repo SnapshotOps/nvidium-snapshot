@@ -55,9 +55,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
 
     @Inject(method = "destroy", at = @At("TAIL"))
     private void destroy(CallbackInfo ci) {
-        if (Nvidium.IS_ENABLED) {
-            if (renderer == null)
-                throw new IllegalStateException("Pipeline already destroyed");
+        if (renderer != null) {
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(null);
             renderer.delete();
             renderer = null;

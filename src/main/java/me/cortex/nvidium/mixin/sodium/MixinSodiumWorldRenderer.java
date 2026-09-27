@@ -38,7 +38,7 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
 
     @Override
     public NvidiumWorldRenderer getRenderer() {
-        if (Nvidium.IS_ENABLED) {
+        if (Nvidium.IS_ENABLED && renderSectionManager != null) {
             return ((INvidiumWorldRendererGetter) renderSectionManager).getRenderer();
         } else {
             return null;
@@ -57,6 +57,10 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
             if (pass == DefaultTerrainRenderPasses.CUTOUT) // Early exit, cutout will be rendered with SOLID
                 return;
 
+            NvidiumWorldRenderer renderer = this.getRenderer();
+            if (renderer == null)
+                return;
+
             // Invalidate lastProgram to prevent B3D caching bad program
             ((GlCommandEncoderAccessor)
                     ((FrontendCommandEncoderAccessor) RenderSystem.getDevice().createCommandEncoder())
@@ -73,9 +77,9 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
 
             if (pass == DefaultTerrainRenderPasses.SOLID) {
                 sm._disableBlend(0);
-                this.getRenderer().renderFrame(pass, viewport, fogParameters, matrices, x, y, z, terrainSampler);
+                renderer.renderFrame(pass, viewport, fogParameters, matrices, x, y, z, terrainSampler);
             } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
-                this.getRenderer().renderTranslucent(pass, (FrontendRenderPass) renderPass, terrainSampler, stage);
+                renderer.renderTranslucent(pass, (FrontendRenderPass) renderPass, terrainSampler, stage);
             }
         }
     }

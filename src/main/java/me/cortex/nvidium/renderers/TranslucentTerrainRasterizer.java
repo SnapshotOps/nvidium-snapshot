@@ -50,6 +50,8 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("OIT_WAVELET_RANK", 2)
                                     .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
+                                    .define("OIT_NUMBER_OF_DEPTH_BINS", LevelRenderer.OIT_NUMBER_OF_DEPTH_BINS)
+                                    .define("OIT_TRANSMITTANCE_TARGET_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ALPHA_ONLY")
                                     .define("OIT_DEPTH_BOUNDS")
                     ))
@@ -65,6 +67,8 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("OIT_WAVELET_RANK", 2)
                                     .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
+                                    .define("OIT_NUMBER_OF_DEPTH_BINS", LevelRenderer.OIT_NUMBER_OF_DEPTH_BINS)
+                                    .define("OIT_TRANSMITTANCE_TARGET_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ALPHA_ONLY")
                                     .define("OIT_TRANSMITTANCE")
                     ))
@@ -80,6 +84,8 @@ public class TranslucentTerrainRasterizer extends Phase {
                                     .define("OIT_WAVELET_RANK", 2)
                                     .define("OIT_COEFF_COUNT", OIT_COEFFICIENT_COUNT)
                                     .define("OIT_COEFF_ATTACHMENT_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
+                                    .define("OIT_NUMBER_OF_DEPTH_BINS", LevelRenderer.OIT_NUMBER_OF_DEPTH_BINS)
+                                    .define("OIT_TRANSMITTANCE_TARGET_COUNT", LevelRenderer.OIT_TRANSMITTANCE_TARGET_COUNT)
                                     .define("OIT_ACCUMULATE")
                     ))
                     .compile()
@@ -148,8 +154,8 @@ public class TranslucentTerrainRasterizer extends Phase {
                     setTexture(lightTexture, 1, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
 
                     linkRenderpearlSampler(renderPass, oitShader.getId(), "DepthBoundsSampler", 2);
-                    linkRenderpearlSampler(renderPass, oitShader.getId(), "Coeff0", 3);
-                    linkRenderpearlSampler(renderPass, oitShader.getId(), "Coeff1", 4);
+                    linkRenderpearlSampler(renderPass, oitShader.getId(), "Bins0", 3);
+                    linkRenderpearlSampler(renderPass, oitShader.getId(), "Bins1", 4);
                     break;
             }
         }
